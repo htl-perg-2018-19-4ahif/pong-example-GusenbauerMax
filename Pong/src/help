@@ -1,0 +1,47 @@
+/** Helper function that starts movement when keydown happens */
+  function startMoving(id: number) {
+    // Move paddle every 4ms
+    if (id == 1){
+      interval = setInterval(() => movePaddle(currentPaddlePosition + direction, 2), 4);
+    }else{
+      interval = setInterval(() => movePaddle(currentPaddle2Position + direction2, 2), 4);
+    }
+    
+  }
+
+  /** Helper function that stops movement when keyup happens */
+  function stopMoving(id: number) {
+    if (id == 1){
+      clearInterval(interval);
+      interval = direction = undefined;
+    }else{
+      clearInterval(interval2);
+      interval2 = direction2 = undefined;
+    }
+    
+  }
+
+  /**
+   * Helper function that moves the paddle to a given position
+   * @param targetPosition Target position. No movement is done if target position is invalid
+   */
+  function movePaddle(targetPosition: number, id: number): void {
+    if (id == 1){
+      if (targetPosition >= 0 && (targetPosition + paddleHeight) <= document.documentElement.clientHeight) {
+        currentPaddlePosition = targetPosition;
+  
+        // Note the 'px' at the end of the coordinates for CSS. Don't
+        // forget it. Without the 'px', it doesn't work.
+        paddle.style.setProperty('top', `${currentPaddlePosition}px`);
+      }
+    }else{
+      if (targetPosition >= 0 && (targetPosition + paddle2Height) <= document.documentElement.clientHeight) {
+        currentPaddle2Position = targetPosition;
+  
+        // Note the 'px' at the end of the coordinates for CSS. Don't
+        // forget it. Without the 'px', it doesn't work.
+        paddle2.style.setProperty('top', `${currentPaddle2Position}px`);
+      }
+    }
+    
+  }

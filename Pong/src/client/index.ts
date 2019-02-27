@@ -24,14 +24,25 @@ window.addEventListener("load", async () => {
   const paddleHeight = paddle.clientHeight;
   const paddleHalfHeight = paddleHeight / 2;
   let currentPaddlePosition = paddle.clientTop;
+  let player1: number = 0;
+  let player2: number = 0; 
 
   // Controls the speed of the movement (number of pixels per interval)
   const speed = 1;
 
-  // Two helper variables that contain values during movement with cursor
-  // keys. If currently not movement is happening, they are undefined.
+  // Again for second Paddle
   let interval: NodeJS.Timeout;
   let direction: number;
+
+  // Again for second Paddle
+  const paddle2 = <HTMLDivElement>document.getElementsByClassName('paddle2')[0];
+  const paddle2Height = paddle2.clientHeight;
+  const paddle2HalfHeight = paddle2Height / 2;
+  let currentPaddle2Position = paddle2.clientTop;
+
+  // Again for second Paddle
+  let interval2: NodeJS.Timeout;
+  let direction2: number;
   
   /** Represents directions  */
   enum Direction { top, right, bottom, left };
@@ -62,14 +73,37 @@ window.addEventListener("load", async () => {
     // necessary because keydown events arrive often when key is
     // continuously pressed.
     if (!interval) {
+      if (event.keyCode === 87){
+        direction = speed * -1;
+        startMoving();
+      }
+      if (event.keyCode === 83){
+        direction = speed;
+        startMoving();
+      }
+    }
+  });
+
+  // Listen to keyup event
+  document.addEventListener('keyup', event => {
+    if (event.keyCode === 87 || event.keyCode === 83){
+      stopMoving();
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    // We have to check whether a movement is already in progress. This is
+    // necessary because keydown events arrive often when key is
+    // continuously pressed.
+    if (!interval2) {
       switch (event.code) {
         case 'ArrowDown':
-          direction = speed;
-          startMoving();
+          direction2 = speed;
+          startMoving2();
           break;
         case 'ArrowUp':
-          direction = speed * -1;
-          startMoving();
+          direction2 = speed * -1;
+          startMoving2();
           break;
       }
     }
@@ -80,14 +114,14 @@ window.addEventListener("load", async () => {
     switch (event.code) {
       case 'ArrowDown':
       case 'ArrowUp':
-        stopMoving();
+        stopMoving2();
         break;
     }
   });
 
   do {
     // Calculate target.
-    // X-coordinate iw either right or left border of browser window (depending on
+    // X-coordinate is either right or left border of browser window (depending on
     //              target quadrant)
     // y-coordinate is calculated using tangens angle function of angle
     //              (note: tan(angle) = delta-y / delta-x). The sign depends on
@@ -123,8 +157,10 @@ window.addEventListener("load", async () => {
     // The touch position is the new current position of the ball.
     // Note that we fix the position here slightly in case a small piece of the ball has reached an area
     // outside of the visible browser window.
-    ballCurrentPosition.x = Math.min(Math.max(borderTouch.touchPosition.x - ballHalfSize.width, 0) + ballHalfSize.width, clientSize.width);
-    ballCurrentPosition.y = Math.min(Math.max(borderTouch.touchPosition.y - ballHalfSize.height, 0) + ballHalfSize.height, clientSize.height);
+    if (borderTouch.touchPosition != null){
+      ballCurrentPosition.x = Math.min(Math.max(borderTouch.touchPosition.x - ballHalfSize.width, 0) + ballHalfSize.width, clientSize.width);
+      ballCurrentPosition.y = Math.min(Math.max(borderTouch.touchPosition.y - ballHalfSize.height, 0) + ballHalfSize.height, clientSize.height);
+    }
   } while (true); // Forever
 
   /**
@@ -159,17 +195,40 @@ window.addEventListener("load", async () => {
         // Move the ball to the new position
         moveBall(animatedPosition);
 
+        let touchWall: boolean = false;
+
         // Check if the ball touches the browser window's border
         let touchDirection: Direction;
-        if ((animatedPosition.x - ballHalfSize.width) < 0) { touchDirection = Direction.left; }
+        if ((animatedPosition.x - ballHalfSize.width) < 0) { respawnBall(); touchDirection = Direction.right; touchWall = true}
         if ((animatedPosition.y - ballHalfSize.height) < 0) { touchDirection = Direction.top; }
-        if ((animatedPosition.x + ballHalfSize.width) > clientSize.width) { touchDirection = Direction.right; }
+        if ((animatedPosition.x + ballHalfSize.width) > clientSize.width) { respawnBall(); touchDirection = Direction.left; touchWall = true}
         if ((animatedPosition.y + ballHalfSize.height) > clientSize.height) { touchDirection = Direction.bottom; }
+
+        // Check if Ball hits right Paddle 
+        if (getNumberWOComas(animatedPosition.x - ballHalfSize.width) == 315 && getNumberWOComas(animatedPosition.y - ballHalfSize.height) > currentPaddlePosition && getNumberWOComas(animatedPosition.y - ballHalfSize.height) < (paddleHeight + currentPaddlePosition)) {
+          touchDirection = Direction.left;
+        }
+
+        //Check if Ball hits right Paddle
+        if (getNumberWOComas(animatedPosition.x - ballHalfSize.width) == 1620 && getNumberWOComas(animatedPosition.y - ballHalfSize.height) > currentPaddle2Position && getNumberWOComas(animatedPosition.y - ballHalfSize.height) < (paddleHeight + currentPaddle2Position)) {
+          touchDirection = Direction.right;
+        }
 
         if (touchDirection !== undefined) {
           // Ball touches border -> stop animation
           clearInterval(interval);
-          res({ touchPosition: animatedPosition, touchDirection: touchDirection });
+          if (touchWall == true){
+            if (touchDirection == Direction.right){
+              player1++;
+              $('#player1')[0].innerHTML = `${player1}`;
+            }else{
+              player2++;
+              $('#player2')[0].innerHTML = `${player2}`;
+            }
+            res({ touchPosition: null, touchDirection: touchDirection });
+          }else{
+            res({ touchPosition: animatedPosition, touchDirection: touchDirection });
+          }
         }
       }, 4);
     });
@@ -239,5 +298,42 @@ window.addEventListener("load", async () => {
       // forget it. Without the 'px', it doesn't work.
       paddle.style.setProperty('top', `${currentPaddlePosition}px`);
     }
+  }
+
+  //second paddle
+  function startMoving2() {
+    // Move paddle every 4ms
+    interval2 = setInterval(() => movePaddle2(currentPaddle2Position + direction2), 4);
+  }
+
+  /** Helper function that stops movement when keyup happens */
+  function stopMoving2() {
+    clearInterval(interval2);
+    interval2 = direction2 = undefined;
+  }
+
+  /**
+   * Helper function that moves the paddle to a given position
+   * @param targetPosition Target position. No movement is done if target position is invalid
+   */
+  function movePaddle2(targetPosition: number): void {
+    if (targetPosition >= 0 && (targetPosition + paddleHeight) <= document.documentElement.clientHeight) {
+      currentPaddle2Position = targetPosition;
+
+      // Note the 'px' at the end of the coordinates for CSS. Don't
+      // forget it. Without the 'px', it doesn't work.
+      paddle2.style.setProperty('top', `${currentPaddle2Position}px`);
+    }
+  }
+
+  //Remove Coma Position from a Number
+  function getNumberWOComas (number: number): number{
+    return number - number%1;
+  }
+
+  //Respawns ball when it hits the left or right border
+  function respawnBall (){
+    ballCurrentPosition = { x: clientHalfSize.width, y: clientHalfSize.height };
+    moveBall(ballCurrentPosition);
   }
 });

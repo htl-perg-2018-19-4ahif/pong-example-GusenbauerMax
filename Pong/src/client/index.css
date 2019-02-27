@@ -15,7 +15,15 @@ body {
     width: 20px;
     height: 100px;
     background-color: white;
-    left: 50px;
+    left: 300px;
+}
+
+.paddle2 {
+    position: absolute;
+    width: 20px;
+    height: 100px;
+    background-color: white;
+    left: 1620px;
 }
 
 #ball {
@@ -27,4 +35,15 @@ body {
 
 html {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h1 { 
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    color: white;
+}
+
+#player1Div {
+    left: 600px;
 }
