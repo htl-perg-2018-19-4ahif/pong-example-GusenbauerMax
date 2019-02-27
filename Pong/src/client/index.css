@@ -7,15 +7,22 @@ html, body {
 }
 
 body {
-    background-color: lightgray;
+    background-color: black;
 }
 
 .paddle {
     position: absolute;
     width: 20px;
     height: 100px;
-    background-color: red;
+    background-color: white;
     left: 50px;
+}
+
+#ball {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: white;
 }
 
 html {
