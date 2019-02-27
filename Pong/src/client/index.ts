@@ -21,6 +21,23 @@ window.addEventListener("load", async () => {
     const ballHalfSize = splitSize(ballSize, 2);
     const clientSize: Size = { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight };
     const clientHalfSize = splitSize(clientSize, 2);
+
+    //PADDLE---
+    // Get some information about the paddle. This information will never change.
+    // So it makes sense to get it only once to make the rest of the program faster.
+    const paddle = <HTMLDivElement>document.getElementsByClassName('paddle')[0];
+    const paddleHeight = paddle.clientHeight;
+    const paddleHalfHeight = paddleHeight / 2;
+    let currentPaddlePosition = paddle.clientTop;
+
+    // Controls the speed of the movement (number of pixels per interval)
+    const speed = 1;
+
+    // Two helper variables that contain values during movement with cursor
+    // keys. If currently not movement is happening, they are undefined.
+    let interval: NodeJS.Timeout;
+    let direction: number;
+    //PADDLE---
   
     // Move ball to center of the screen
     let ballCurrentPosition: Point = { x: clientHalfSize.width, y: clientHalfSize.height };
@@ -33,10 +50,74 @@ window.addEventListener("load", async () => {
     // Calculate the random quadrant into which the ball should initially travel.
     // 0 = upper right, 1 = lower right, 2 = lower left, 3 = upper left
     let quadrant = Math.floor(Math.random() * 4);
+
+    //PADDLE---
+    // Listen to keydown event
+    document.addEventListener('keydown', event => {
+        // We have to check whether a movement is already in progress. This is
+        // necessary because keydown events arrive often when key is
+        // continuously pressed.
+        if (!interval) {
+        switch (event.code) {
+            case 'ArrowDown':
+            direction = speed;
+            startMoving();
+            break;
+            case 'ArrowUp':
+            direction = speed * -1;
+            startMoving();
+            break;
+        }
+        }
+    });
+
+    // Listen to keyup event
+    document.addEventListener('keyup', event => {
+        switch (event.code) {
+        case 'ArrowDown':
+        case 'ArrowUp':
+            stopMoving();
+            break;
+        }
+    });
+
+    // Setup handler for touch displays (pan operation)
+    const hammertime = new Hammer(paddle);
+    hammertime.get('pan').set({ direction: Hammer.DIRECTION_DOWN | Hammer.DIRECTION_UP });
+    hammertime.on('pan', ev => 
+        // Put center of paddle to the center of the user's finger
+        movePaddle(ev.center.y - paddleHalfHeight));
+
+    /** Helper function that starts movement when keydown happens */
+    function startMoving() {
+        // Move paddle every 4ms
+        interval = setInterval(() => movePaddle(currentPaddlePosition + direction), 4);
+    }
+
+    /** Helper function that stops movement when keyup happens */
+    function stopMoving() {
+        clearInterval(interval);
+        interval = direction = undefined;
+    }
+
+    /**
+     * Helper function that moves the paddle to a given position
+     * @param targetPosition Target position. No movement is done if target position is invalid
+     */
+    function movePaddle(targetPosition: number): void {
+        if (targetPosition >= 0 && (targetPosition + paddleHeight) <= document.documentElement.clientHeight) {
+        currentPaddlePosition = targetPosition;
+
+        // Note the 'px' at the end of the coordinates for CSS. Don't
+        // forget it. Without the 'px', it doesn't work.
+        paddle.style.setProperty('top', `${currentPaddlePosition}px`);
+        }
+    }
+    //PADDLE---
   
     do {
       // Calculate target.
-      // X-coordinate iw either right or left border of browser window (depending on
+      // X-coordinate is either right or left border of browser window (depending on
       //              target quadrant)
       // y-coordinate is calculated using tangens angle function of angle
       //              (note: tan(angle) = delta-y / delta-x). The sign depends on
